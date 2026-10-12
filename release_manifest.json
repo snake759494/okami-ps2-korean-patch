@@ -1,0 +1,11 @@
+{
+ "version": "v1.0",
+ "asset": "Ookami_PS2_KO_v1.0.xdelta",
+ "asset_size": 1443346,
+ "asset_sha256": "3db56a41f032abfa1f2ec093069ff9dce274fecde80ce2501a048f475546ec19",
+ "source_iso_size": 4279599104,
+ "source_iso_md5": "ec6dc2c6339af71a6dc7076cf72156e7",
+ "source_iso_sha256": "b0c55adb2f3d474e108466b52db895c2c92963a0f6bd55f4c1abac2c6ec02e9d",
+ "result_iso_size": 4278456320,
+ "result_iso_sha256": "a2c391ce6d410d1c6f8a09d63fb0c0ef68b11c75fb5905d157309fa69fb20ad1"
+}
