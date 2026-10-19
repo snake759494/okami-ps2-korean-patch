@@ -43,48 +43,37 @@ def _split_pages(text):
     if cur:out.append((cur,''))
     return out
 
-def _wrap_page(body,limit,maxlines):
-    lines=body.split('<A001>')
-    if all(width(l)<=limit for l in lines):return body,False,False
-    # 줄 앞뒤 공백 정리 후 공백으로 이어 붙여 단어 단위로 다시 채운다
-    joined=' '.join(l.strip(' ') for l in lines if l.strip(' ')!='' or True).strip(' ')
-    words=joined.split(' ')
-    sp=width(' ')
-    def fill(lim):
-        out=[];cur='';cw=0
-        for w in words:
-            ww=width(w)
-            if cur=='' :cur=w;cw=ww
-            elif cw+sp+ww<=lim:cur+=' '+w;cw+=sp+ww
-            else:out.append(cur);cur=w;cw=ww
-        out.append(cur);return out
-    new=fill(limit)
-    over=len(new)>maxlines
-    # 한 단어가 폭을 넘으면 글자 단위로 자른다
-    fixed=[]
-    for l in new:
-        if width(l)<=limit:fixed.append(l);continue
-        cur=''
-        for span in TOKEN.split(l):
-            if not span:continue
-            if TOKEN.fullmatch(span):cur+=span;continue
-            for c in span:
-                if width(cur+c)>limit and width(cur)>0:fixed.append(cur);cur=''
-                cur+=c
-        fixed.append(cur)
-    if len(fixed)>maxlines and SPLIT_OK[0]:
-        # 대화창: 넘치는 줄은 다음 페이지로(입력 대기 + 지우기)
-        chunks=['<A001>'.join(fixed[i:i+maxlines]) for i in range(0,len(fixed),maxlines)]
-        still=any(width(l)>limit for l in fixed)
-        return '<A301><A101>'.join(chunks),True,still
-    still=any(width(l)>limit for l in fixed) or len(fixed)>maxlines
-    return '<A001>'.join(fixed),True,still
+def _fill(words,lim):
+    sp=width(' ');out=[];cur='';cw=0
+    for w in words:
+        ww=width(w)
+        if cur=='':cur=w;cw=ww
+        elif cw+sp+ww<=lim:cur+=' '+w;cw+=sp+ww
+        else:out.append(cur);cur=w;cw=ww
+    out.append(cur);return out
 
-def wrap(text,limit,maxlines):
+def _wrap_page(body,limit,maxlines,split_ok,cap):
+    lines=body.split('<A001>')
+    if len(lines)<=maxlines and all(width(l)<=limit for l in lines):return body,False,False
+    words=' '.join(l.strip(' ') for l in lines).strip(' ').split(' ')
+    new=_fill(words,limit)
+    if len(new)>maxlines:
+        # 원문 줄 수 안에 들도록 폭을 cap 까지 넓혀 본다(창 줄 수를 넘기지 않는 것이 우선)
+        lim=limit
+        while len(new)>maxlines and lim<cap:
+            lim=min(cap,lim+4);new=_fill(words,lim)
+    if len(new)>maxlines and split_ok:
+        chunks=['<A001>'.join(new[i:i+maxlines]) for i in range(0,len(new),maxlines)]
+        return '<A301><A101>'.join(chunks),True,False
+    return '<A001>'.join(new),True,len(new)>maxlines
+
+def wrap(text,limit,maxlines,split_ok=None,cap=None):
     """반환: (새 텍스트, 바뀐 페이지 수, 여전히 넘치는 페이지 수)"""
+    if split_ok is None:split_ok=SPLIT_OK[0]
+    if cap is None:cap=limit
     out='';changed=0;bad=0
     for body,term in _split_pages(text):
-        nb,ch,st=_wrap_page(body,limit,maxlines)
+        nb,ch,st=_wrap_page(body,limit,maxlines,split_ok,cap)
         out+=nb+term;changed+=ch;bad+=st
     return out,changed,bad
 

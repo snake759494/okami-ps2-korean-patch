@@ -36,6 +36,17 @@ def apply(raw, labels):
     alpha = pal[:, 3]; clear = int(np.argmin(alpha))
     for lab in labels:
         x0, y0, x1, y1, text = lab[:5]; o = lab[5] if len(lab) > 5 else {}
+        if o.get('erase_all'):
+            # 원본 잉크 색을 기억한 뒤 전체를 지우고, 필요하면 사각 테두리를 그린다
+            ink0 = alpha[idx] > 8
+            vals, cnt = np.unique(idx[ink0], return_counts=True)
+            keep = int(vals[cnt.argmax()]) if len(vals) else tex.nearest(pal, (255, 255, 255, 128))
+            idx[:] = clear
+            th = o.get('frame', 0)
+            if th:
+                idx[y0:y0 + th, x0:x1] = keep; idx[y1 - th:y1, x0:x1] = keep
+                idx[y0:y1, x0:x0 + th] = keep; idx[y0:y1, x1 - th:x1] = keep
+            continue
         reg = idx[y0:y1, x0:x1]
         if 'fg' in o:
             rgb = pal[reg][..., :3]

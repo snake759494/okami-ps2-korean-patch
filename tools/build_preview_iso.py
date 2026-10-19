@@ -154,13 +154,14 @@ def main():
         if not b['msd'] or len(b['mst'])<=16:continue
         le=font.msa_parse(b['msa'])['ent']
         ent=lambda v,le=le:wrap.ew(ca['ent'][v]) if v>>12==0 and v<len(ca['ent']) else (wrap.ew(le[v&4095]) if (v&4095)<len(le) else 24)
-        lay=[wrap.jp_layout(it[0],ent) for it in msd.parse(b['msd']) if it]
-        if not lay:continue
-        limit=max(x[0] for x in lay);maxl=max(x[1] for x in lay)
-        wrap.SPLIT_OK[0]=any(0xA101 in it[0] for it in msd.parse(b['msd']) if it)
+        M=msd.parse(b['msd'])
+        laym={i:wrap.jp_layout(it[0],ent) for i,it in enumerate(M) if it}
+        if not laym:continue
+        limit=max(x[0] for x in laym.values())
         for r in byblock[bi]:
-            if r['id'] not in texts:continue
-            t,ch,bad=wrap.wrap(texts[r['id']],limit,maxl)
+            if r['id'] not in texts or r['message'] not in laym:continue
+            ml=laym[r['message']][1];sp=0xA101 in M[r['message']][0]
+            t,ch,bad=wrap.wrap(texts[r['id']],limit,ml,sp,int(limit*1.35))
             if ch:wrap_stats['pages_rewrapped']+=ch;wrap_stats['messages']+=1;texts[r['id']]=t
             if bad:still_over.append(r['id'])
     print('자동 줄바꿈',dict(wrap_stats),'여전히 넘침',len(still_over),flush=True)
@@ -322,12 +323,14 @@ def main():
         btx={r['id']:mtx[r['id']] for r in mrows if r['id'] in mtx}
         lent=font.msa_parse(mb['msa'])['ent']
         ent2=lambda v,le=lent:wrap.ew(ca['ent'][v]) if v>>12==0 and v<len(ca['ent']) else (wrap.ew(le[v&4095]) if (v&4095)<len(le) else 24)
-        lay=[wrap.jp_layout(it[0],ent2) for it in msd.parse(mb['msd']) if it]
-        if lay:
-            wrap.SPLIT_OK[0]=any(0xA101 in it[0] for it in msd.parse(mb['msd']) if it)
-            lim=max(x[0] for x in lay);ml=max(x[1] for x in lay)
+        MM=msd.parse(mb['msd'])
+        laym={i:wrap.jp_layout(it[0],ent2) for i,it in enumerate(MM) if it}
+        if laym:
+            lim=max(x[0] for x in laym.values())
             for kk in list(btx):
-                t2,chg,bad=wrap.wrap(btx[kk],lim,ml)
+                mi=int(kk.rsplit(':',1)[1])
+                if mi not in laym:continue
+                t2,chg,bad=wrap.wrap(btx[kk],lim,laym[mi][1],0xA101 in MM[mi][0],int(lim*1.35))
                 if chg:btx[kk]=t2;wrap_stats['missed_rewrapped']+=1
         orig=msd.parse(mb['msd']);la=font.msa_parse(mb['msa'])
         codes=set()
