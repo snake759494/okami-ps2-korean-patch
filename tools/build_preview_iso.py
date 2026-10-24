@@ -393,6 +393,7 @@ def main():
         return filecache[k,i]
     tex_report=[]
     for n,labels in spec.items():
+        if n.startswith('BOARD'):continue
         e=oindex[int(n[1:])] if n.startswith('X') else tindex[int(n)];d=fdata(e['k'],e['i'])
         if (e['k'],e['i']) in payloads:d=afs.read(e['k'],*tables[e['k']][e['i']][1:])
         tot=struct.unpack_from('<I',d,e['off']+16)[0];raw=d[e['off']:e['off']+16+tot]
@@ -405,6 +406,20 @@ def main():
             c=cur.count(raw);payloads[k,i]=cur.replace(raw,new);hits+=c
         assert hits>=1,(n,'원본 텍스처를 찾지 못함')
         tex_report.append(dict(texture=n,file=e['file'],replaced=hits))
+    # 미니게임 설명판(낚시 등): 상자 글을 다시 쓰고 같은 그림 사본 전부 교체
+    for key,boxes in spec.get('BOARD',{}).items():
+        fname,off=key.split(':');off=int(off)
+        k,i=next((kk,ii) for kk in (0,1) for ii,(nm,_,_) in enumerate(tables[kk]) if nm==fname)
+        d0=afs.read(k,*tables[k][i][1:]);tot=struct.unpack_from('<I',d0,off+16)[0];raw=d0[off:off+16+tot]
+        new=relabel.apply_board(raw,boxes)
+        if key in spec.get('BOARD_LABELS',{}):new=relabel.apply(new,spec['BOARD_LABELS'][key])
+        assert len(new)==len(raw);hits=0
+        for kk in (0,1):
+            for ii,(nm,o,sz) in enumerate(tables[kk]):
+                if sz>40_000_000:continue
+                cur=fdata(kk,ii)
+                if raw in cur:hits+=cur.count(raw);payloads[kk,ii]=cur.replace(raw,new)
+        tex_report.append(dict(texture=key,replaced=hits))
     print('UI 텍스처 교체',len(tex_report),'종',sum(x['replaced'] for x in tex_report),'곳',flush=True)
     applied=[i for v in ids_by_file.values() for _,ids in v for i in ids]+list(core_texts)
     temp=ROOT/'work/preview_build';temp.mkdir(exist_ok=True)

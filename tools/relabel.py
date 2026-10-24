@@ -98,3 +98,38 @@ def apply(raw, labels):
 
 if __name__ == '__main__':
     pass
+
+def apply_board(raw, boxes, font_px=19):
+    """설명판(두루마리 상자)용: 상자 안을 상자 배경색으로 칠하고 여러 줄 글자를 다시 쓴다.
+    boxes: [[x0,y0,x1,y1,[줄,...]], ...]  줄 안의 [ ... ] 은 빨간 글자."""
+    import re as _re
+    t = tex.load(raw); pal = t['pal']; idx = t['idx']
+    black = tex.nearest(pal, (20, 20, 20, 128)); red = tex.nearest(pal, (200, 20, 20, 128))
+    for x0, y0, x1, y1, lines in boxes:
+        reg = idx[y0:y1, x0:x1]
+        lum = pal[reg][..., :3].sum(-1)
+        bgv, cnt = np.unique(reg[lum > 450], return_counts=True)
+        bg = int(bgv[cnt.argmax()])
+        reg[:] = bg
+        W, H = x1 - x0, y1 - y0; n = len(lines)
+        size = font_px
+        while True:
+            f = ImageFont.truetype(FONT, size)
+            widths = [ImageDraw.Draw(Image.new('L', (1, 1))).textlength(_re.sub(r'[\[\]]', '', l), font=f) for l in lines]
+            if (max(widths) <= W - 8 and size * 1.25 * n <= H) or size <= 10: break
+            size -= 1
+        lh = H / n
+        for li, line in enumerate(lines):
+            y = int(li * lh + (lh - size) / 2) - 1
+            x = 6.0
+            for part in _re.split(r'(\[[^\]]*\])', line):
+                if not part: continue
+                col = red if part.startswith('[') else black
+                txt = part.strip('[]')
+                im = Image.new('L', (W, H)); d = ImageDraw.Draw(im)
+                d.text((x, y), txt, font=f, fill=255)
+                a = np.asarray(im)
+                reg[a >= 110] = col
+                x += d.textlength(txt, font=f)
+    t['idx'] = idx
+    return tex.save(raw, t)

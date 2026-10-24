@@ -1,11 +1,11 @@
 {
- "version": "v1.0.1",
- "asset": "Ookami_PS2_KO_v1.0.1.xdelta",
- "asset_size": 1440551,
- "asset_sha256": "2648a66a3bad5f4f3e9e459b540c8bea9f033f7aac7073ba11551aa63840d10c",
+ "version": "v1.0.2",
+ "asset": "Ookami_PS2_KO_v1.0.2.xdelta",
+ "asset_size": 1494321,
+ "asset_sha256": "316a4d30886c585297bac6688c4a52b9c7b9ced0de4048a1afcc749741d16cc7",
  "source_iso_size": 4279599104,
  "source_iso_md5": "ec6dc2c6339af71a6dc7076cf72156e7",
  "source_iso_sha256": "b0c55adb2f3d474e108466b52db895c2c92963a0f6bd55f4c1abac2c6ec02e9d",
  "result_iso_size": 4278454272,
- "result_iso_sha256": "618b1569566043e7dbc4dfa1ca3184224e9558a5fe48b0e99b638a8101c43a3e"
+ "result_iso_sha256": "48f6e50b282eea62065f369da328708e79c8263695af615868a388f744a407e6"
 }
