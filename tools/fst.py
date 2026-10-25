@@ -22,7 +22,9 @@ def update_sizes(data,changes):
     for r in records(data):
         if r['type']!=2 or r['index'] not in changes:continue
         size=(changes[r['index']]+63)&~63
-        assert size<0x10000000
+        if size>=0x10000000:
+            # 256MiB 이상 스트리밍 파일은 크기 필드가 원래 0 이다
+            assert r['size']==0;found.add(r['index']);continue
         q=(r['raw']&~SIZE_MASK)|(size&0x3fc0)|((size>>14)<<32)
         struct.pack_into('<Q',out,r['pos'],q);found.add(r['index'])
     assert found==set(changes)

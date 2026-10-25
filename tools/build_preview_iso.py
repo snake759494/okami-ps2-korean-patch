@@ -427,6 +427,10 @@ def main():
     for (archive,index),payload in payloads.items():
         path=temp/f'{archive}_{index:04d}.bin';path.write_bytes(payload)
         replacements[archive][index]=path;generated.append(path)
+    mov=ROOT/'work/prologue_ko.sfd'
+    if mov.exists():
+        assert mov.stat().st_size==tables[1][1276][2],'자막판 영상 크기 불일치'
+        replacements[1][1276]=mov
     output=ROOT/'Ookami (Japan) (Korean).iso'
     print(f'빌드 시작: {len(applied)}개 메시지, {len(generated)}개 파일, 공용 한글 {len(common)}자, 공용 누락 {len(missing_core)}, 원본유지 블록 {len(frozen)}',flush=True)
     report=build(output,replacements)
